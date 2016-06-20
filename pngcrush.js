@@ -1,84 +1,11 @@
-try {
-  this["Module"] = Module;
-} catch (e) {
-  this["Module"] = Module = {};
-}
+const Module = {
+	'noInitialRun': true,
+	'noFSInit': true,
+	'load': importScripts
+};
 
-var ENVIRONMENT_IS_NODE = typeof process === "object";
-
-var ENVIRONMENT_IS_WEB = typeof window === "object";
-
-var ENVIRONMENT_IS_WORKER = typeof importScripts === "function";
-
-var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
-
-if (ENVIRONMENT_IS_NODE) {
-  Module["print"] = (function(x) {
-    process["stdout"].write(x + "\n");
-  });
-  Module["printErr"] = (function(x) {
-    process["stderr"].write(x + "\n");
-  });
-  var nodeFS = require("fs");
-  var nodePath = require("path");
-  Module["read"] = (function(filename) {
-    filename = nodePath["normalize"](filename);
-    var ret = nodeFS["readFileSync"](filename).toString();
-    if (!ret && filename != nodePath["resolve"](filename)) {
-      filename = path.join(__dirname, "..", "src", filename);
-      ret = nodeFS["readFileSync"](filename).toString();
-    }
-    return ret;
-  });
-  Module["load"] = (function(f) {
-    globalEval(read(f));
-  });
-  if (!Module["arguments"]) {
-    Module["arguments"] = process["argv"].slice(2);
-  }
-} else if (ENVIRONMENT_IS_SHELL) {
-  Module["print"] = print;
-  Module["printErr"] = printErr;
-  if (typeof read != "undefined") {
-    Module["read"] = read;
-  } else {
-    Module["read"] = (function(f) {
-      snarf(f);
-    });
-  }
-  if (!Module["arguments"]) {
-    if (typeof scriptArgs != "undefined") {
-      Module["arguments"] = scriptArgs;
-    } else if (typeof arguments != "undefined") {
-      Module["arguments"] = arguments;
-    }
-  }
-} else if (ENVIRONMENT_IS_WEB) {
-  if (!Module["print"]) {
-    Module["print"] = (function(x) {
-      console.log(x);
-    });
-  }
-  if (!Module["printErr"]) {
-    Module["printErr"] = (function(x) {
-      console.log(x);
-    });
-  }
-  Module["read"] = (function(url) {
-    var xhr = new XMLHttpRequest;
-    xhr.open("GET", url, false);
-    xhr.send(null);
-    return xhr.responseText;
-  });
-  if (!Module["arguments"]) {
-    if (typeof arguments != "undefined") {
-      Module["arguments"] = arguments;
-    }
-  }
-} else if (ENVIRONMENT_IS_WORKER) {
-  Module["load"] = importScripts;
-} else {
-  throw "Unknown runtime environment. Where are we?";
+if (!Module.load) {
+	throw new Error("Must be loaded in worker!");
 }
 
 function globalEval(x) {
