@@ -1,7 +1,10 @@
-var WORKER_URL = "worker.js";
-
 (function ()
 {
+	'use strict';
+	var WORKER_URL = "worker.js";
+	var isWorking = false;
+	var queue = [];
+	
 	var CreateWorker = function CreateWorker()
 	{
 		var worker;
@@ -48,9 +51,6 @@ var WORKER_URL = "worker.js";
 		}
 	}();
 	
-	var isWorking = false;
-	var queue = [];
-	
 	function ProcessNext () {
 		if (isWorking)
 			return;
@@ -60,13 +60,11 @@ var WORKER_URL = "worker.js";
 		}
 	}
 	
-	function ProcessImage (blob, res, stdout) {
+	function ProcessImage (blob, res) {
 		if (!(blob instanceof Blob))
 			throw new TypeError(`${blob} is not instance of Blob`);
 		if (typeof res !== 'function')
 			throw new TypeError(`${res} is not instance of function`);
-		if (typeof stdout !== 'function' && typeof stdout !== 'undefined')
-			throw new TypeError(`${stdout} is not instance of function`);
 		if (isWorking)
 			throw new Error("Already working!");
 		isWorking = true;
@@ -77,12 +75,11 @@ var WORKER_URL = "worker.js";
 			var data = new Uint8Array(result);
 			CreateWorker()
 			.then(function (worker) {
-				worker.oncomplete = blob => {
+				worker.oncomplete = function (blob) {
 					isWorking = false;
 					ProcessNext();
 					res(blob);
 				};
-				worker.onstdout = stdout;
 				worker.send(data);
 			});
 		}
@@ -99,8 +96,8 @@ var WORKER_URL = "worker.js";
 			throw new TypeError(`Expected PNG not ${blob.type}`);
 		return new Promise(function(res) {
 			queue.push({
-				blob,
-				res
+				blob: blob,
+				res: res
 			});
 			ProcessNext();
 		});
