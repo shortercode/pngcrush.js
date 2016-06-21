@@ -109,13 +109,13 @@ There is a fairly complete if slightly confusing guide to setting up emscripten 
 ```
 sh build.sh
 ```
-This will perform a clean build of pngcrush.js from the c source code in pngcrush-1.8.1 using make. Then package the output to the `~/distribution/` folder. The makefile is configured specifically for doing the emscripten build, and **does not** need to be called with emmake.
+This will perform a clean build of pngcrush.js from the c source code in pngcrush-1.8.1 using make. Then package the output to the `~/` folder. The makefile is configured specifically for doing the emscripten build, and **does not** need to be called with emmake.
 
-- Build options are specified in the LDFLAGS variable of the `~/pngcrush-1.8.1/Makefile`.
-- Control logic for the emscripten module is found in `~/pre.js`.
-- Scheduler and public API logic is found within `~/main.js`.
-- Files will output to `~/distribution/`.
-- The arguments that are passed to pngcrush when its run can be found in `~/pre.js`.
+- Build options are specified in the LDFLAGS variable of the `~/src/pngcrush-1.8.1/Makefile`.
+- Control logic for the emscripten module is found in `~/src/pre.js`.
+- Scheduler and public API logic is found within `~/src/main.js`.
+- Files will output to `~/`.
+- The arguments that are passed to pngcrush when its run can be found in `~/src/pre.js`.
 
 ## License - LGPLv2
 
