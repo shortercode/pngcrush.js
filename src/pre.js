@@ -1,48 +1,50 @@
+'use strict';
+
 var Module = {
 	'noInitialRun': true,
 	'noFSInit': true,
-	'preInit': function () {
-		var stdout = [];
-		FS.init(function () { return null; }, function (data) {
-			stdout.push(String.fromCharCode(data));
-			if (data == 10) {
-				postMessage({
-					type: 'stdout',
-					data: stdout.join('')
-				});
-				stdout.length = 0;
+	'preInit': function ()
+	{
+		FS.init(
+			function ()
+			{
+				return null;
+			},
+			function ()
+			{
+				return null;
 			}
-		});
-		
+		);
 	},
-	'onRuntimeInitialized': function () {
+	'onRuntimeInitialized': function ()
+	{
 		self['postMessage']({
 			type: 'ready'
 		});
 	}
 };
 
-function getFile (name) {
-	var file = FS.root.contents[name];
-	if (file) {
-		var data = FS.root.contents[name].contents;
-		var buffer = new Uint8Array(data).buffer;
-		return new Blob([buffer], {type: 'image/png'});
-	}
+function getFile (name)
+{
+	
 }
 
-self['onmessage'] = function(e) {
+self['onmessage'] = function(e)
+{
 	var message = e.data;
 	switch (message.type)
 	{
 		case "file":
 			FS.createDataFile('/', 'input.png', message.data, true, false);
 			Module.callMain(['-reduce', '-rem', 'alla', '-rem', 'text', 'input.png', 'output.png']);
-			var output = getFile('output.png');
-			if (output) {
+			
+			if (FS.root.contents['output.png'])
+			{
+				var data = FS.root.contents['output.png'];
+				var buffer = new Uint8Array(data).buffer;
 				postMessage({
 					type: 'output',
-					data: output
+					data: new Blob([buffer], {type: 'image/png'})
 				});
 				FS.unlink('input.png');
 				FS.unlink('output.png');
