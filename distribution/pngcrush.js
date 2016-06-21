@@ -1,5 +1,3 @@
-var WORKER_URL = "worker.js";
-
 (function ()
 {
 	var CreateWorker = function CreateWorker()
@@ -12,7 +10,7 @@ var WORKER_URL = "worker.js";
 			
 			return new Promise(function (res)
 			{
-				var W = new Worker(WORKER_URL);
+				var W = new Worker("worker.js");
 				W.onmessage = function (e)
 				{
 					var message = e.data;

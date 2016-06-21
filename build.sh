@@ -1,6 +1,6 @@
-#!/bin/bash
-
-# pngcrush
-cd pngcrush-1.7.27
+cd pngcrush-1.8.1
+make clean
 make
-~/emscripten/emcc pngcrush.bc -O1 -o ../pngcrush.js # O2 doesn't work
+mv ./pngcrush.js ../distribution/worker.js
+mv ./pngcrush.js.mem ../distribution/pngcrush.js.mem
+cp ./main.js ../distribution/pngcrush.js
