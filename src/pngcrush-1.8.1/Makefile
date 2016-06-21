@@ -37,7 +37,7 @@ TOOFAR_OK=
 CFLAGS = -O3 -funroll-loops -fomit-frame-pointer -Wall -Wshadow
 # [note that -Wall is a gcc-specific compilation flag ("all warnings on")]
 
-LDFLAGS = -O3 --pre-js ../pre.js --closure 1
+LDFLAGS = -O3 --pre-js ../pre.js
 O = .o
 E = .js
 

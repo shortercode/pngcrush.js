@@ -1,108 +1,114 @@
-var WORKER_URL = "worker.js";
-
-(function ()
 {
-	var CreateWorker = function CreateWorker()
+	const WORKER_URL = "worker.js";
+
+	let isWorking = false,
+		queue = [],
+		worker = null;
+
+	function RequireBlob (blob)
 	{
-		var worker;
-		return function ()
+		if (!(blob instanceof Blob))
+			throw new TypeError(`${blob} is not instance of Blob`);
+	}
+
+	function RequireBlobType (blob, type)
+	{
+		RequireBlob(blob);
+		if (blob.type !== type)
+			throw new TypeError(`${blob} is not type ${type}`);
+	}
+
+	function RequireFunction (fn)
+	{
+		if (typeof fn !== 'function')
+			throw new TypeError(`${fn} is not instance of Function`);
+	}
+
+	function CreateWorker ()
+	{
+		if (worker)
+			return Promise.resolve(worker);
+		
+		return new Promise(res =>
 		{
-			if (worker)
-				return Promise.resolve(worker);
-			
-			return new Promise(function (res)
+			let W = new Worker(WORKER_URL);
+			W.onmessage = e =>
 			{
-				var W = new Worker(WORKER_URL);
-				W.onmessage = function (e)
+				let message = e.data;
+				if (message.type === "ready")
 				{
-					var message = e.data;
-					if (message.type === "ready")
-					{
-						worker = {
-							send (file) {
-								W.postMessage({
-									type: "file",
-									data: file
-								});
-							},
-							oncomplete: null
-						};
-						W.onmessage = function (e)
+					worker = {
+						send (file)
 						{
-							var message = e.data;
-							if (message.type === "output")
-							{
-								if (typeof worker.oncomplete !== 'function')
-									throw new Error("No completion handler present");
-								worker.oncomplete(message.data);
-							}
-							if (message.type === "stdout" && typeof worker.onstdout === 'function')
-							{
-								worker.onstdout(message.data);
-							}
-						};
-						res(worker);
-					}
+							W.postMessage({
+								type: "file",
+								data: file
+							});
+						},
+						oncomplete: null
+					};
+					W.onmessage = e =>
+					{
+						let message = e.data;
+						if (message.type === "output")
+						{
+							RequireFunction(worker.oncomplete);
+							worker.oncomplete(message.data);
+						}
+					};
+					res(worker);
 				}
-			});
-		}
-	}();
-	
-	var isWorking = false;
-	var queue = [];
-	
-	function ProcessNext () {
+			};
+		});
+	}
+
+	function ProcessNext ()
+	{
 		if (isWorking)
 			return;
 		let next = queue.pop();
-		if (next) {
-			ProcessImage(next.blob, next.res, next.stdout);
-		}
+		if (next)
+			ProcessImage(next.blob, next.res);
 	}
-	
-	function ProcessImage (blob, res, stdout) {
-		if (!(blob instanceof Blob))
-			throw new TypeError(`${blob} is not instance of Blob`);
-		if (typeof res !== 'function')
-			throw new TypeError(`${res} is not instance of function`);
-		if (typeof stdout !== 'function' && typeof stdout !== 'undefined')
-			throw new TypeError(`${stdout} is not instance of function`);
+
+	function ProcessImage (blob, res)
+	{
+		RequireBlob(blob);
+		RequireFunction(res);
 		if (isWorking)
 			throw new Error("Already working!");
 		isWorking = true;
-		var fileReader = new FileReader();
+		let fileReader = new FileReader();
 		fileReader.onload = function (e)
 		{
-			var result = e.target.result;
-			var data = new Uint8Array(result);
+			let result = e.target.result;
+			let data = new Uint8Array(result);
 			CreateWorker()
-			.then(function (worker) {
-				worker.oncomplete = blob => {
+			.then(worker =>
+			{
+				worker.oncomplete = blob =>
+				{
 					isWorking = false;
 					ProcessNext();
 					res(blob);
 				};
-				worker.onstdout = stdout;
 				worker.send(data);
 			});
 		}
 		fileReader.readAsArrayBuffer(blob);
 	}
-	
-	window.PNGCrush = function SubmitImage(blob)
+
+	window.PNGCrush = blob =>
 	{
-		if (!(blob instanceof Blob))
-			throw new TypeError(`${blob} is not instance of Blob`);
-		if (typeof stdout !== 'function' && typeof stdout !== 'undefined')
-			throw new TypeError(`${stdout} is not instance of function`);
-		if (blob.type !== "image/png")
-			throw new TypeError(`Expected PNG not ${blob.type}`);
-		return new Promise(function(res) {
+		RequireBlobType(blob, "image/png");
+		return new Promise((res, rej) =>
+		{
 			queue.push({
 				blob,
-				res
+				res,
+				rej
 			});
 			ProcessNext();
 		});
-	}
-})();
+	};
+}
